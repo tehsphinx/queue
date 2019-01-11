@@ -53,6 +53,22 @@ func (s *Queue) Pop() (interface{}, bool) {
 	return e.Value, true
 }
 
+// Next blocks until an element is available or the queue is closed.
+// Reports false if the queue has been emptied and is closed.
+// Beware that if multiple goroutines read from the queue, Pop can return false after Next was true.
+func (s *Queue) Next() bool {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	for s.list.Len() == 0 {
+		if s.closed {
+			return false
+		}
+		s.cond.Wait()
+	}
+	return true
+}
+
 // PopBlocking removes and returns a node from the queue.
 // It blocks until an element is available or the queue is closed.
 // The bool value is false if the queue has been emptied and was closed.
