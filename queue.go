@@ -90,12 +90,17 @@ func (s *Queue) PopBlocking() (interface{}, bool) {
 
 // Len reports the current length of the queue.
 func (s *Queue) Len() int {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	return s.list.Len()
 }
 
 // Clear empties the buffer
 func (s *Queue) Clear() {
+	s.lock.Lock()
 	s.list.Init()
+	s.lock.Unlock()
 }
 
 // Close closes the queue. Use this to release all PopBlocking calls.
