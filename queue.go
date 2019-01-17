@@ -93,6 +93,11 @@ func (s *Queue) Len() int {
 	return s.list.Len()
 }
 
+// Clear empties the buffer
+func (s *Queue) Clear() {
+	s.list.Init()
+}
+
 // Close closes the queue. Use this to release all PopBlocking calls.
 // The queue will be emptied before PopBlocking returns false.
 func (s *Queue) Close() error {
