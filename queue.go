@@ -88,6 +88,11 @@ func (s *Queue) PopBlocking() (interface{}, bool) {
 	return e.Value, true
 }
 
+// Len reports the current length of the queue.
+func (s *Queue) Len() int {
+	return s.list.Len()
+}
+
 // Close closes the queue. Use this to release all PopBlocking calls.
 // The queue will be emptied before PopBlocking returns false.
 func (s *Queue) Close() error {
