@@ -29,7 +29,67 @@ func TestQueue_Push_Next_Pop(t *testing.T) {
 	}(wg)
 
 	wg.Wait()
+}
 
+func TestQueue_Has(t *testing.T) {
+	var q = NewQueue()
+
+	for i := 0; i < 10; i++ {
+		err := q.Push(i)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if !q.Has(func(elem interface{}) bool {
+		return elem.(int) == 8
+	}) {
+		t.Errorf("did not contain 8")
+	}
+
+	if q.Has(func(elem interface{}) bool {
+		return elem.(int) == 12
+	}) {
+		t.Errorf("shouldn't contain 12")
+	}
+
+	if err := q.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestQueue_PushUnique(t *testing.T) {
+	var q = NewQueue()
+
+	existFunc := func(i int) func(elem interface{}) bool {
+		return func(elem interface{}) bool {
+			return elem.(int) == i
+		}
+	}
+
+	for i := 0; i < 10; i++ {
+		ok, err := q.PushUnique(i, existFunc(i))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Errorf("could not add %d", i)
+		}
+	}
+
+	for i := 0; i < 10; i++ {
+		ok, err := q.PushUnique(i, existFunc(i))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok {
+			t.Errorf("was able to add %d", i)
+		}
+	}
+
+	if err := q.Close(); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func BenchmarkQueue_Push(b *testing.B) {

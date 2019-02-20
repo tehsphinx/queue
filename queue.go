@@ -10,7 +10,6 @@ import (
 func NewQueue() *Queue {
 	q := &Queue{
 		list: list.New(),
-		lock: sync.Mutex{},
 	}
 	q.cond = sync.NewCond(&q.lock)
 	return q
@@ -37,6 +36,26 @@ func (s *Queue) Push(n interface{}) error {
 
 	s.cond.Broadcast()
 	return nil
+}
+
+// PushUnique adds a node to the queue if it does not exist already.
+// The existence is checked with existFunc.
+// Will fail if the queue has been closed.
+func (s *Queue) PushUnique(n interface{}, existFunc func(elem interface{}) bool) (bool, error) {
+	s.lock.Lock()
+	if s.closed {
+		s.lock.Unlock()
+		return false, errors.New("queue.Queue: pushing item into a closed queue")
+	}
+	if s.Has(existFunc) {
+		s.lock.Unlock()
+		return false, nil
+	}
+	s.list.PushBack(n)
+	s.lock.Unlock()
+
+	s.cond.Broadcast()
+	return true, nil
 }
 
 // Pop removes and returns a node from the queue.
@@ -94,6 +113,19 @@ func (s *Queue) Len() int {
 	defer s.lock.Unlock()
 
 	return s.list.Len()
+}
+
+// Has checks if an item in the list exists according to the given check function.
+// This is not blocking. When it is done the element you are looking for could have been added.
+func (s *Queue) Has(check func(elem interface{}) bool) bool {
+	e := s.list.Front()
+	for e != nil {
+		if check(e.Value) {
+			return true
+		}
+		e = e.Next()
+	}
+	return false
 }
 
 // Clear empties the buffer
