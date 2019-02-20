@@ -92,6 +92,27 @@ func TestQueue_PushUnique(t *testing.T) {
 	}
 }
 
+func TestQueue_PopBlocking(t *testing.T) {
+	var q = NewQueue()
+
+	for i := 0; i < 10; i++ {
+		err := q.Push(i)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for i := 0; i < 10; i++ {
+		interf, ok := q.PopBlocking()
+		if !ok {
+			t.Error("did not get a value")
+		}
+		if interf.(int) != i {
+			t.Errorf("expected %d got %v", i, interf)
+		}
+	}
+}
+
 func BenchmarkQueue_Push(b *testing.B) {
 	var q = NewQueue()
 
