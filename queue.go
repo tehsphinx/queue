@@ -107,6 +107,21 @@ func (s *Queue) PopBlocking() (interface{}, bool) {
 	return e.Value, true
 }
 
+// Wait blocks if the queue is empty until an item is added or the queue is closed.
+func (s *Queue) Wait() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	for s.list.Len() == 0 {
+		s.cond.Wait()
+		if s.closed {
+			break
+		}
+	}
+
+	return
+}
+
 // Len reports the current length of the queue.
 func (s *Queue) Len() int {
 	s.lock.Lock()

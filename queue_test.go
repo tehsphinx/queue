@@ -3,6 +3,7 @@ package queue
 import (
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestQueue_Push_Next_Pop(t *testing.T) {
@@ -109,6 +110,64 @@ func TestQueue_PopBlocking(t *testing.T) {
 		}
 		if interf.(int) != i {
 			t.Errorf("expected %d got %v", i, interf)
+		}
+	}
+}
+
+func TestQueue_Wait(t *testing.T) {
+	ch := make(chan time.Time)
+
+	// check if a new time unblocks Wait
+	q := NewQueue()
+	go func() {
+		q.Wait()
+		t := time.Now()
+		ch <- t
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+	if err := q.Push(1); err != nil {
+		t.Fatal(err)
+	}
+
+	expectedTime := time.Now()
+	gotTime := <-ch
+
+	if expectedTime.After(gotTime) {
+		if 1*time.Millisecond < expectedTime.Sub(gotTime) {
+			t.Error("time should be closer")
+		}
+	}
+	if gotTime.After(expectedTime) {
+		if 1*time.Millisecond < gotTime.Sub(expectedTime) {
+			t.Error("time should be closer")
+		}
+	}
+
+	// check if closing unblocks Wait
+	q = NewQueue()
+	go func() {
+		q.Wait()
+		t := time.Now()
+		ch <- t
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+	if err := q.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	expectedTime = time.Now()
+	gotTime = <-ch
+
+	if expectedTime.After(gotTime) {
+		if 1*time.Millisecond < expectedTime.Sub(gotTime) {
+			t.Error("time should be closer", expectedTime.Sub(gotTime))
+		}
+	}
+	if gotTime.After(expectedTime) {
+		if 1*time.Millisecond < gotTime.Sub(expectedTime) {
+			t.Error("time should be closer", gotTime.Sub(expectedTime))
 		}
 	}
 }
