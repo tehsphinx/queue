@@ -113,10 +113,10 @@ func (s *Queue) Wait() {
 	defer s.lock.Unlock()
 
 	for s.list.Len() == 0 {
-		s.cond.Wait()
 		if s.closed {
 			break
 		}
+		s.cond.Wait()
 	}
 
 	return
